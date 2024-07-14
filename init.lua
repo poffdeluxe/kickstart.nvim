@@ -164,8 +164,8 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Diagnostic keymaps
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next [D]iagnostic message' })
-vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic [E]rror messages' })
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>ce', vim.diagnostic.open_float, { desc = 'Show [C]ode diagnostic [E]rror messages' })
+vim.keymap.set('n', '<leader>cq', vim.diagnostic.setloclist, { desc = 'Open [C]ode diagnostic [Q]uickfix list' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -226,6 +226,21 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   {
+    'nvim-tree/nvim-tree.lua',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    cmd = 'NvimTreeToggle',
+    config = function()
+      vim.g.loaded_netrw = 1
+      vim.g.loaded_netrwPlugin = 1
+
+      -- empty setup using defaults
+      require('nvim-tree').setup()
+    end,
+    keys = {
+      { '<leader>tt', '<cmd>NvimTreeToggle<CR>', mode = '', desc = '[T]oggle [T]ree' },
+    },
+  },
+  {
     'linux-cultist/venv-selector.nvim',
     dependencies = {
       'neovim/nvim-lspconfig',
@@ -239,7 +254,7 @@ require('lazy').setup({
       require('venv-selector').setup()
     end,
     keys = {
-      { '<leader>cv', '<cmd>VenvSelect<cr>' },
+      { '<leader>cv', '<cmd>VenvSelect<cr>', mode = '', desc = '[C]ode: Virtual Env Select' },
     },
   },
 
@@ -376,7 +391,12 @@ require('lazy').setup({
         --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
         --   },
         -- },
-        -- pickers = {}
+        pickers = {
+          find_files = {
+            hidden = true,
+            file_ignore_patterns = { '.git/', 'venv/' },
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -588,6 +608,7 @@ require('lazy').setup({
         pyright = {},
         black = {},
         isort = {},
+        nextls = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -883,7 +904,52 @@ require('lazy').setup({
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
+  {
+    'elixir-tools/elixir-tools.nvim',
+    version = '*',
+    event = { 'bufreadpre', 'bufnewfile' },
+    config = function()
+      local elixir = require 'elixir'
+      local elixirls = require 'elixir.elixirls'
 
+      elixir.setup {
+        nextls = {
+          enable = false,
+          cmd = 'nextls',
+          init_options = {
+            experimental = {
+              completions = {
+                enable = true, -- control if completions are enabled. defaults to false
+              },
+            },
+          },
+          on_attach = function(client, bufnr)
+            vim.keymap.set('n', '<leader>cfp', ':ElixirFromPipe<cr>', { buffer = true, noremap = true })
+            vim.keymap.set('n', '<leader>ctp', ':ElixirToPipe<cr>', { buffer = true, noremap = true })
+            vim.keymap.set('v', '<leader>cem', ':ElixirExpandMacro<cr>', { buffer = true, noremap = true })
+          end,
+        },
+        elixirls = {
+          enable = true,
+          settings = elixirls.settings {
+            dialyzerenabled = true,
+            enabletestlenses = false,
+          },
+          on_attach = function(client, bufnr)
+            vim.keymap.set('n', '<leader>cfp', ':elixirfrompipe<cr>', { buffer = true, noremap = true })
+            vim.keymap.set('n', '<leader>ctp', ':elixirtopipe<cr>', { buffer = true, noremap = true })
+            vim.keymap.set('v', '<leader>cem', ':elixirexpandmacro<cr>', { buffer = true, noremap = true })
+          end,
+        },
+        projectionist = {
+          enable = true,
+        },
+      }
+    end,
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+  },
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
